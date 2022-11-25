@@ -1,74 +1,11 @@
 package org.example;
-/** package org.example;
-// Java program to create a blank text
-// field of definite number of columns.
-import java.awt.event.*;
-import javax.swing.*;
-class text extends JFrame implements ActionListener {
-    static JTextField textField;
-    static JFrame frame;
-    static JButton button;
-    static JLabel label;// label to display text
-    // default constructor
-    text() {}
-
-    MAIN
-    public static void main(String[] args)
-    {
-        // create a new frame to store text field and button
-        frame = new JFrame("Prime");
-
-        // create a label to display text
-        label = new JLabel("nothing entered");
-
-        // create a new button
-        button = new JButton("Start Producer");
-
-        // create a object of the text class
-        text te = new text();
-
-        // addActionListener to button
-        button.addActionListener(te);
-
-        // create a object of JTextField with 16 columns
-        textField = new JTextField(16);
-
-        // create a panel to add buttons and textfield
-        JPanel p = new JPanel();
-
-        // add buttons and textfield to panel
-        p.add(textField);
-        p.add(button);
-        p.add(label);
-
-        // add panel to frame
-        frame.add(p);
-
-        // set the size of frame
-        frame.setSize(1000/2, 1300/2);
-
-        frame.show();
-    }
-
-    // if the button is pressed
-    public void actionPerformed(ActionEvent e)
-    {
-        String s = e.getActionCommand();
-        if (s.equals("submit")) {
-            // set the text of the label to the text of the field
-            label.setText(textField.getText());
-
-
-            // set the text of field to blank
-            textField.setText(" ");
-        }
-    }
-}
-**/
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.TimeUnit;
+
+import static java.lang.Thread.sleep;
 
 public class Main {
     public static void printText(String n, String bufferSize, String outputFileName){
@@ -77,10 +14,12 @@ public class Main {
     public static void main(String args[]) {
 
         JFrame frame = new JFrame("");
-
+        //Fonts
         Font labelFont = new Font("sans serif", Font.BOLD, 13);
         Font buttonTextFieldFont = new Font("sans serif", Font.PLAIN, 11);
+        Font lowerPartTextFont = new Font("sans serif", Font.BOLD, 11);
 
+        // Components
         JTextField nTextField =  new JTextField(200);
         JTextField bufferSizeTextField =  new JTextField(200);
         JTextField outputFileTextField =  new JTextField(200);
@@ -88,7 +27,14 @@ public class Main {
         JLabel bufferSizeLabel = new JLabel("Buffer Size");
         JLabel outputFileLabel = new JLabel("Output File");
         JButton startProducerButton = new JButton("Start Producer");
+        JLabel largestPrimeNumberTitle = new JLabel("The largest prime number");
+        JLabel numberOfElementsGeneratedTitle = new JLabel("No. of elements (prime number) generated");
+        JLabel timeElapsedTitle = new JLabel("Time elapsed since the start of processing");
+        JLabel largestPrimeNumber = new JLabel("1234567");
+        JLabel numberOfElementsGenerated = new JLabel("123456");
+        JLabel timeElapsed = new JLabel("12345678901");
 
+        // Fonts setting
         startProducerButton.setFont(buttonTextFieldFont);
         nTextField.setFont(buttonTextFieldFont);
         bufferSizeTextField.setFont(buttonTextFieldFont);
@@ -96,7 +42,20 @@ public class Main {
         nLabel.setFont(labelFont);
         bufferSizeLabel.setFont(labelFont);
         outputFileLabel.setFont(labelFont);
+        largestPrimeNumberTitle.setFont(lowerPartTextFont);
+        numberOfElementsGeneratedTitle.setFont(lowerPartTextFont);
+        timeElapsedTitle.setFont(lowerPartTextFont);
+        largestPrimeNumber.setFont(lowerPartTextFont);
+        numberOfElementsGenerated.setFont(lowerPartTextFont);
+        timeElapsed.setFont(lowerPartTextFont);
 
+        // Setting labels color
+        Color orangeBrown = new Color(205,122,15);
+        largestPrimeNumberTitle.setForeground(orangeBrown);
+        numberOfElementsGeneratedTitle.setForeground(orangeBrown);
+        timeElapsedTitle.setForeground(orangeBrown);
+
+        // Positioning of components
         startProducerButton.setBounds(40,180,140,20);
         nTextField.setBounds(40,30,200,30);
         bufferSizeTextField.setBounds(40,80,200,30);
@@ -104,7 +63,14 @@ public class Main {
         nLabel.setBounds(280,30,200,30);
         bufferSizeLabel.setBounds(280,80,200,30);
         outputFileLabel.setBounds(280,130,200,30);
+        largestPrimeNumberTitle.setBounds(40,270,200,30);
+        numberOfElementsGeneratedTitle.setBounds(40,320,400,30);
+        timeElapsedTitle.setBounds(40,370,400,30);
+        largestPrimeNumber.setBounds(370,270,200,30);
+        numberOfElementsGenerated.setBounds(370,320,400,30);
+        timeElapsed.setBounds(370,370,400,30);
 
+        // Adding components to the frame
         frame.add(startProducerButton);
         frame.add(nTextField);
         frame.add(bufferSizeTextField);
@@ -112,13 +78,21 @@ public class Main {
         frame.add(nLabel);
         frame.add(bufferSizeLabel);
         frame.add(outputFileLabel);
+        frame.add(largestPrimeNumberTitle);
+        frame.add(numberOfElementsGeneratedTitle);
+        frame.add(timeElapsedTitle);
+        frame.add(largestPrimeNumber);
+        frame.add(numberOfElementsGenerated);
+        frame.add(timeElapsed);
+
+        // Action listener to the button and custom actionPerformed for our case
         startProducerButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String action = e.getActionCommand();
                 if (action.equals("Start Producer")){
                     Main.printText(nTextField.getText(),bufferSizeTextField.getText(),outputFileTextField.getText());
-                    //IF WE WANT TO FLUSH AFTER BUTTON CLICK V
+                    //IF WE WANT TO FLUSH TEXT FIELDS AFTER BUTTON CLICK V
                     // nTextField.setText("");
                     // bufferSizeTextField.setText("");
                     // outputFileTextField.setText("");
@@ -126,7 +100,7 @@ public class Main {
             }
         });
 
-        frame.setSize(400,500);
+        frame.setSize(540,500);
         frame.setLayout(null);
         frame.setVisible(true);
     }
