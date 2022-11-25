@@ -3,6 +3,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.sleep;
@@ -10,6 +12,29 @@ import static java.lang.Thread.sleep;
 public class Main {
     public static void printText(String n, String bufferSize, String outputFileName){
         System.out.println(n+" "+bufferSize+" "+outputFileName);
+    }
+    public static void onClick(String action, String nTextFieldValue,String bufferSizeTextFieldValue,String outputFileTextFieldValue){
+        if (action.equals("Start Producer")){
+            Main.printText(nTextFieldValue,bufferSizeTextFieldValue,outputFileTextFieldValue);
+            //IF WE WANT TO FLUSH TEXT FIELDS AFTER BUTTON CLICK V
+            // nTextField.setText("");
+            // bufferSizeTextField.setText("");
+            // outputFileTextField.setText("");
+            try {
+                if(!outputFileTextFieldValue.contains(".txt")){
+                    outputFileTextFieldValue+=".txt";
+                }
+                File outputFile = new File(outputFileTextFieldValue);
+                if (outputFile.createNewFile()) {
+                    System.out.println("File created: " + outputFile.getName());
+                } else {
+                    System.out.println("File already exists.");
+                }
+            } catch (IOException ioe) {
+                System.out.println("An error occurred.");
+                ioe.printStackTrace();
+            }
+        }
     }
     public static void main(String args[]) {
 
@@ -90,13 +115,8 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String action = e.getActionCommand();
-                if (action.equals("Start Producer")){
-                    Main.printText(nTextField.getText(),bufferSizeTextField.getText(),outputFileTextField.getText());
-                    //IF WE WANT TO FLUSH TEXT FIELDS AFTER BUTTON CLICK V
-                    // nTextField.setText("");
-                    // bufferSizeTextField.setText("");
-                    // outputFileTextField.setText("");
-                }
+                Main.onClick(action,nTextField.getText(),bufferSizeTextField.getText(),outputFileTextField.getText());
+
             }
         });
 
