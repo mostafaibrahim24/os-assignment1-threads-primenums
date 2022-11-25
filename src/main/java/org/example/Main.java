@@ -4,39 +4,174 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.sleep;
 
-public class Main {
-    public static void printText(String n, String bufferSize, String outputFileName){
-        System.out.println(n+" "+bufferSize+" "+outputFileName);
-    }
-    public static void onClick(String action, String nTextFieldValue,String bufferSizeTextFieldValue,String outputFileTextFieldValue){
-        if (action.equals("Start Producer")){
-            Main.printText(nTextFieldValue,bufferSizeTextFieldValue,outputFileTextFieldValue);
-            //IF WE WANT TO FLUSH TEXT FIELDS AFTER BUTTON CLICK V
-            // nTextField.setText("");
-            // bufferSizeTextField.setText("");
-            // outputFileTextField.setText("");
+class semaphore {
+    protected int value ;
+    protected semaphore() { value = 1 ; }
+    public synchronized void acquireLock() {
+        if(value==1){//If available
+            value=0; //mark as not available, proceed to execute the critical section
+            return;
+        }
+        if(value == 0){//If not available
             try {
-                if(!outputFileTextFieldValue.contains(".txt")){
-                    outputFileTextFieldValue+=".txt";
-                }
-                File outputFile = new File(outputFileTextFieldValue);
-                if (outputFile.createNewFile()) {
-                    System.out.println("File created: " + outputFile.getName());
-                } else {
-                    System.out.println("File already exists.");
-                }
-            } catch (IOException ioe) {
-                System.out.println("An error occurred.");
-                ioe.printStackTrace();
+                wait();//Wait
+                value=1;//After the wait, set as available
+            } catch( InterruptedException e ) {
+                System.out.println(e);
             }
         }
     }
-    public static void main(String args[]) {
+    public synchronized void releaseLock() {
+        if (value == 0){
+            value=1;
+            notify();
+        }
+    }
+}
+class Globals {
+    public static semaphore sm;
+    public static Queue<Integer> buffer;
+
+    public static Integer bufferSize;
+
+    public static Integer n;
+
+    public static String outputFileName;
+
+    public static FileWriter outputFileWriter;
+
+    public static Boolean lastPrimeProduction;
+}
+class Producer extends Thread{
+    public boolean checkIfPrime(int input) {
+        boolean isPrime = true;
+        if(input <= 1) {isPrime = false; return isPrime;}
+        else {
+            for (int i = 2; i<= input/2; i++) {
+                if ((input % i) == 0) { isPrime = false; break;}
+            }
+            return isPrime;
+        }
+    }
+    protected Integer bufferCount;
+    public Producer(){
+        Globals.sm.acquireLock();
+        bufferCount=0;
+        for(int i=0;i<=Globals.n;i++){
+            if(bufferCount==Globals.bufferSize){
+                Globals.sm.releaseLock();
+                Globals.sm.acquireLock();
+                bufferCount=0;
+            }
+            if (checkIfPrime(i)){
+                Globals.buffer.add(i);
+                bufferCount++;
+
+            }
+        }
+        Globals.sm.releaseLock();
+    }
+    // semaphore.acquireLock()
+    // bufferCount=0
+    // for i= 0 -> N(Max number)
+            //if bufferCount == BufferSize
+            //   semaphore.releaseLock()    ---> available, consumer acquire the lock
+            //   semaphore.acquireLock()
+            //   BufferCount = 0
+    //      if i is prime then add to buffer, bufferCount++
+}
+class Consumer extends Thread{
+
+    public Consumer() throws IOException {
+        Globals.sm.acquireLock();
+        for(int k=0;k<Globals.n/Globals.bufferSize;k++){
+            for (int i = 0; i < Globals.bufferSize; i++) {
+                if (Globals.buffer.isEmpty()) { //If buffer elements are less than buffer size, break because it is unnecessary
+                    break;
+                }
+                // Append to file
+                Globals.outputFileWriter.write("\"" + Integer.toString(Globals.buffer.remove()) + "\", ");//appends the string to the file
+
+            }
+            if (Globals.buffer.isEmpty()) { //Making sure to release only if buffer is empty
+                Globals.sm.releaseLock();
+                Globals.sm.acquireLock();
+            }
+        }
+    }
+    // acquire lock
+    // for i -> bufferSize:
+    // numbers didn't fill the buffer to its max [1,2,3]
+    //      if(buffer is empty){ // if buffer elements are less than buffer size, break because it is unnecessary
+    //          break;
+    //      }
+    //
+    // if(buffer is empty): release lock //Making sure to release only if buffer is empty
+}
+    // semaphore;
+    // buffer [buffer_size]
+    // Producer.start(semaphore,&buffer);
+    // Consumer.start(semaphore,&buffer);
+    //
+    //
+
+public class Main {
+
+    public static void printText(String n, String bufferSize, String outputFileName){
+        System.out.println(n+" "+bufferSize+" "+outputFileName);
+    }
+    public static void createOutputFile(String outputFileTextFieldValue){
+        try {
+            if(!outputFileTextFieldValue.contains(".txt")){
+                outputFileTextFieldValue+=".txt";
+            }
+            File outputFile = new File(outputFileTextFieldValue);
+            if (outputFile.createNewFile()) {
+                System.out.println("File created: " + outputFile.getName());
+            } else {
+                System.out.println("File already exists.");
+            }
+            Globals.outputFileName=outputFileTextFieldValue;
+        } catch (IOException ioe) {
+            System.out.println("An error occurred.");
+            ioe.printStackTrace();
+        }
+    }
+
+
+    public static void onClick(String action, String nTextFieldValue,String bufferSizeTextFieldValue,String outputFileTextFieldValue) throws IOException, InterruptedException {
+        if (action.equals("Start Producer")){
+            Main.printText(nTextFieldValue,bufferSizeTextFieldValue,outputFileTextFieldValue);
+            createOutputFile(outputFileTextFieldValue);
+            semaphore sm = new semaphore();
+            Queue<Integer> buffer = new LinkedList<Integer>();
+            //if(buffer.isEmpty())
+
+            Globals.sm = sm;
+            Globals.buffer = buffer;
+            Globals.bufferSize= Integer.parseInt(bufferSizeTextFieldValue);
+            Globals.n = Integer.parseInt(nTextFieldValue);
+            Globals.outputFileWriter = new FileWriter(Globals.outputFileName,true);
+            Globals.lastPrimeProduction=false;
+
+            Thread producer = new Producer();
+            Thread consumer = new Consumer();
+            producer.start();
+            consumer.start();
+            producer.join();
+            consumer.join();
+            Globals.outputFileWriter.close();
+        }
+    }
+    public static void main(String args[]) throws InterruptedException {
 
         JFrame frame = new JFrame("");
         //Fonts
@@ -115,7 +250,11 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String action = e.getActionCommand();
-                Main.onClick(action,nTextField.getText(),bufferSizeTextField.getText(),outputFileTextField.getText());
+                try {
+                    Main.onClick(action,nTextField.getText(),bufferSizeTextField.getText(),outputFileTextField.getText());
+                } catch (IOException | InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
 
             }
         });
