@@ -127,7 +127,9 @@ public class Main {
             if (outputFile.createNewFile()) {
                 System.out.println("File created: " + outputFile.getName());
             } else {
-                System.out.println("File already exists.");
+                System.out.println("File already exists. It will be override.");
+                outputFile.delete();
+                outputFile.createNewFile();
             }
             Globals.outputFileName=outputFileTextFieldValue;
         } catch (IOException ioe) {
