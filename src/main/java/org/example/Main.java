@@ -10,8 +10,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.Thread.sleep;
-
 class semaphore {
     protected int value ;
     protected semaphore() { value = 1 ; }
@@ -47,8 +45,10 @@ class Globals {
     public static String outputFileName;
 
     public static FileWriter outputFileWriter;
+    public static JLabel largestPrimeNumber;
+    public static JLabel numberOfElementsGenerated;
+    public static JLabel timeElapsed;
 
-    public static Boolean lastPrimeProduction;
 }
 class Producer extends Thread{
     public boolean checkIfPrime(int input) {
@@ -79,25 +79,30 @@ class Producer extends Thread{
         }
         Globals.sm.releaseLock();
     }
-    // semaphore.acquireLock()
-    // bufferCount=0
-    // for i= 0 -> N(Max number)
-            //if bufferCount == BufferSize
-            //   semaphore.releaseLock()    ---> available, consumer acquire the lock
-            //   semaphore.acquireLock()
-            //   BufferCount = 0
-    //      if i is prime then add to buffer, bufferCount++
 }
 class Consumer extends Thread{
 
-    public Consumer() throws IOException {
+    Integer lP;//largest prime
+    public Consumer() throws IOException, InterruptedException {
         Globals.sm.acquireLock();
+        Timer timer;
         for(int k=0;k<Globals.n/Globals.bufferSize;k++){
             for (int i = 0; i < Globals.bufferSize; i++) {
                 if (Globals.buffer.isEmpty()) { //If buffer elements are less than buffer size, break because it is unnecessary
                     break;
                 }
+                lP = Globals.buffer.peek();
                 // Append to file
+                timer = new Timer( 1500, new ActionListener(){
+                    @Override
+                    public void actionPerformed( ActionEvent e ){
+                        Globals.numberOfElementsGenerated.setText(Integer.toString(Integer.parseInt(Globals.numberOfElementsGenerated.getText())+1));
+                        Globals.largestPrimeNumber.setText(Integer.toString(lP));
+                    }
+                } );
+                timer.setRepeats(false);
+                timer.start();
+
                 Globals.outputFileWriter.write("\"" + Integer.toString(Globals.buffer.remove()) + "\", ");//appends the string to the file
 
             }
@@ -107,22 +112,7 @@ class Consumer extends Thread{
             }
         }
     }
-    // acquire lock
-    // for i -> bufferSize:
-    // numbers didn't fill the buffer to its max [1,2,3]
-    //      if(buffer is empty){ // if buffer elements are less than buffer size, break because it is unnecessary
-    //          break;
-    //      }
-    //
-    // if(buffer is empty): release lock //Making sure to release only if buffer is empty
 }
-    // semaphore;
-    // buffer [buffer_size]
-    // Producer.start(semaphore,&buffer);
-    // Consumer.start(semaphore,&buffer);
-    //
-    //
-
 public class Main {
 
     public static void printText(String n, String bufferSize, String outputFileName){
@@ -153,14 +143,12 @@ public class Main {
             createOutputFile(outputFileTextFieldValue);
             semaphore sm = new semaphore();
             Queue<Integer> buffer = new LinkedList<Integer>();
-            //if(buffer.isEmpty())
 
             Globals.sm = sm;
             Globals.buffer = buffer;
             Globals.bufferSize= Integer.parseInt(bufferSizeTextFieldValue);
             Globals.n = Integer.parseInt(nTextFieldValue);
             Globals.outputFileWriter = new FileWriter(Globals.outputFileName,true);
-            Globals.lastPrimeProduction=false;
 
             Thread producer = new Producer();
             Thread consumer = new Consumer();
@@ -169,6 +157,8 @@ public class Main {
             producer.join();
             consumer.join();
             Globals.outputFileWriter.close();
+            Globals.numberOfElementsGenerated.setText("0");
+
         }
     }
     public static void main(String args[]) throws InterruptedException {
@@ -190,9 +180,9 @@ public class Main {
         JLabel largestPrimeNumberTitle = new JLabel("The largest prime number");
         JLabel numberOfElementsGeneratedTitle = new JLabel("No. of elements (prime number) generated");
         JLabel timeElapsedTitle = new JLabel("Time elapsed since the start of processing");
-        JLabel largestPrimeNumber = new JLabel("1234567");
-        JLabel numberOfElementsGenerated = new JLabel("123456");
-        JLabel timeElapsed = new JLabel("12345678901");
+        Globals.largestPrimeNumber = new JLabel("0");
+        Globals.numberOfElementsGenerated = new JLabel("0");
+        Globals.timeElapsed = new JLabel("0 ms");
 
         // Fonts setting
         startProducerButton.setFont(buttonTextFieldFont);
@@ -205,9 +195,9 @@ public class Main {
         largestPrimeNumberTitle.setFont(lowerPartTextFont);
         numberOfElementsGeneratedTitle.setFont(lowerPartTextFont);
         timeElapsedTitle.setFont(lowerPartTextFont);
-        largestPrimeNumber.setFont(lowerPartTextFont);
-        numberOfElementsGenerated.setFont(lowerPartTextFont);
-        timeElapsed.setFont(lowerPartTextFont);
+        Globals.largestPrimeNumber.setFont(lowerPartTextFont);
+        Globals.numberOfElementsGenerated.setFont(lowerPartTextFont);
+        Globals.timeElapsed.setFont(lowerPartTextFont);
 
         // Setting labels color
         Color orangeBrown = new Color(205,122,15);
@@ -226,9 +216,9 @@ public class Main {
         largestPrimeNumberTitle.setBounds(40,270,200,30);
         numberOfElementsGeneratedTitle.setBounds(40,320,400,30);
         timeElapsedTitle.setBounds(40,370,400,30);
-        largestPrimeNumber.setBounds(370,270,200,30);
-        numberOfElementsGenerated.setBounds(370,320,400,30);
-        timeElapsed.setBounds(370,370,400,30);
+        Globals.largestPrimeNumber.setBounds(370,270,200,30);
+        Globals.numberOfElementsGenerated.setBounds(370,320,400,30);
+        Globals.timeElapsed.setBounds(370,370,400,30);
 
         // Adding components to the frame
         frame.add(startProducerButton);
@@ -241,9 +231,9 @@ public class Main {
         frame.add(largestPrimeNumberTitle);
         frame.add(numberOfElementsGeneratedTitle);
         frame.add(timeElapsedTitle);
-        frame.add(largestPrimeNumber);
-        frame.add(numberOfElementsGenerated);
-        frame.add(timeElapsed);
+        frame.add(Globals.largestPrimeNumber);
+        frame.add(Globals.numberOfElementsGenerated);
+        frame.add(Globals.timeElapsed);
 
         // Action listener to the button and custom actionPerformed for our case
         startProducerButton.addActionListener(new ActionListener() {
@@ -251,7 +241,14 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
                 String action = e.getActionCommand();
                 try {
+                    long startTime = System.nanoTime();
                     Main.onClick(action,nTextField.getText(),bufferSizeTextField.getText(),outputFileTextField.getText());
+                    long endTime = System.nanoTime();
+
+                    long duration = (endTime - startTime);
+                    long durationInMs = TimeUnit.NANOSECONDS.toMillis(duration);
+                    Globals.timeElapsed.setText(durationInMs+" ms");
+
                 } catch (IOException | InterruptedException ex) {
                     throw new RuntimeException(ex);
                 }
